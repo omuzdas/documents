@@ -225,6 +225,44 @@ Normally, **ASP.NET Zero** uses tenant information in login transactions. This d
 
 Then your users will be able to login without specifying a tenant.
 
+ #### Updating AccountAppService
+  
+* Go to `AccountAppService`. *(It is located in **aspnet-core\src\\[YOURAPPNAME].Core\Authorization\Accounts** folder.)*
+
+* Inject   IUnitOfWorkManager;
+
+
+  ```csharp
+  //....
+  private readonly IUnitOfWorkManager _unitOfWorkManager;
+  public AccountAppService(
+            //....
+
+             IUnitOfWorkManager unitOfWorkManager)
+        {
+            //....
+            _unitOfWorkManager = unitOfWorkManager;
+        }
+  
+  ```
+  * Replace the function named `GetUserByChecking` with the following content, this will disable tenatn filter to get user without specifying tenant
+  ```csharp
+  private async Task<User> GetUserByChecking(string inputEmailAddress)
+        {
+            using (_unitOfWorkManager.Current.DisableFilter(AbpDataFilters.MayHaveTenant))
+            {
+                var user = await UserManager.FindByEmailAsync(inputEmailAddress);
+                if (user == null)
+                {
+                    throw new UserFriendlyException(L("InvalidEmailAddress"));
+                }
+
+                return user;
+            }
+            
+        }
+	```
+
 #### More
 
 For a more stable UI, you can remove the tenant selection model used for login operations.
